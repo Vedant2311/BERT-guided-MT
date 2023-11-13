@@ -15,3 +15,5 @@ All the train, dev, and test data, along with the relevant scripts, are present 
 
 ## Performing tokenization before fine-tuning the models
 TODO
+
+Using Sentence Piece to train a model to create a nepali tokenizer.
