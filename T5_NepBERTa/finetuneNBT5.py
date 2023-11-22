@@ -1,5 +1,5 @@
-from transformers import MBartForConditionalGeneration, MBart50TokenizerFast, AutoTokenizer, AutoModelForMaskedLM
-from NBmB import NBmB
+from transformers import MT5Model, AutoTokenizer, AutoModelForMaskedLM
+from NBT5 import NBT5
 import argparse
 import torch
 
@@ -11,35 +11,32 @@ parser.add_argument("--test", action="store_true")
 
 args = parser.parse_args()
 
-tokenizer = AutoTokenizer.from_pretrained("NepBERTa/NepBERTa")
-model = AutoModelForMaskedLM.from_pretrained("NepBERTa/NepBERTa")
-
 def load_model():
-    mBart_model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-50")
-    mBart_tokenizer = MBart50TokenizerFast.from_pretrained("facebook/mbart-large-50", src_lang="ne_NP", tgt_lang="en_XX")
+    t5_model = MT5Model.from_pretrained("google/mt5-base")
+    t5_tokenizer = AutoTokenizer.from_pretrained("google/mt5-base", src_lang="ne_NP", tgt_lang="en_XX")
 
     nepBerta_model = AutoModelForMaskedLM.from_pretrained("NepBERTa/NepBERTa")
     nepBerta_tokenizer = AutoTokenizer.from_pretrained("NepBERTa/NepBERTa")
 
-    nbmb_model = NBmB(mBart_model, nepBerta_model, device=device)
+    nbt5_model = NBT5(t5_model, nepBerta_model, device=device)
 
-    # combine mBart and nepBerta tokenizer
-    nbmb_tokenizer = mBart_tokenizer
-    nbmb_tokenizer.add_tokens(nepBerta_tokenizer.additional_special_tokens)
-    nbmb_tokenizer.add_tokens(nepBerta_tokenizer.all_special_tokens)
-    nbmb_tokenizer.add_tokens(nepBerta_tokenizer.all_special_ids)
-    nbmb_tokenizer.add_tokens(nepBerta_tokenizer.all_vocab_tokens)
-    nbmb_tokenizer.add_tokens(nepBerta_tokenizer.all_vocab_ids)
+    # combine t5 and nepBerta tokenizer
+    nbt5_tokenizer = t5_tokenizer
+    nbt5_tokenizer.add_tokens(nepBerta_tokenizer.additional_special_tokens)
+    nbt5_tokenizer.add_tokens(nepBerta_tokenizer.all_special_tokens)
+    nbt5_tokenizer.add_tokens(nepBerta_tokenizer.all_special_ids)
+    nbt5_tokenizer.add_tokens(nepBerta_tokenizer.all_vocab_tokens)
+    nbt5_tokenizer.add_tokens(nepBerta_tokenizer.all_vocab_ids)
     
-    return nbmb_model, nbmb_tokenizer
+    return nbt5_model, nbt5_tokenizer
 
 def finetune():
     pass
 
 def test():
-    nbmb_model, nbmb_tokenizer = load_model()
-    print(nbmb_model)
-    print(nbmb_tokenizer)
+    nbt5_model, nbt5_tokenizer = load_model()
+    print(nbt5_model)
+    print(nbt5_tokenizer)
     
     # run a test with random tensor
     input_ids = torch.randint(0, 100, (1, 1024)).to(device)
@@ -54,7 +51,7 @@ def test():
         "decoder_attention_mask": decoder_attention_mask
     }
 
-    output = nbmb_model(batch)
+    output = nbt5_model(batch)
 
     print(output)
 

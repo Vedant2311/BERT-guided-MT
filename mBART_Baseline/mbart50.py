@@ -76,6 +76,7 @@ if fine_tune:
 
     # Fine-tune for the specified number of epochs
     for i in range(num_epochs):
+        # TODO: See if this is working. Otherwise we can just not use batches
         for batch in train_loader:
             model_inputs, labels = batch
             model_inputs = model_inputs.cuda()
