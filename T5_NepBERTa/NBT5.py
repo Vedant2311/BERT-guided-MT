@@ -13,7 +13,7 @@ class NBT5(nn.Module):
         decoder_attention_mask = batch["decoder_attention_mask"]
 
         # nepBerta_model output
-        nepBerta_output = self.nepBerta_mode(input_ids)
+        nepBerta_output = self.nepBerta_model(input_ids)
         nepBerta_logits = nepBerta_output.logits
 
         # mBart_model output

@@ -15,7 +15,7 @@ def load_model():
     t5_model = MT5Model.from_pretrained("google/mt5-base")
     t5_tokenizer = AutoTokenizer.from_pretrained("google/mt5-base", src_lang="ne_NP", tgt_lang="en_XX")
 
-    nepBerta_model = AutoModelForMaskedLM.from_pretrained("NepBERTa/NepBERTa")
+    nepBerta_model = AutoModelForMaskedLM.from_pretrained("NepBERTa/NepBERTa", from_tf=True)
     nepBerta_tokenizer = AutoTokenizer.from_pretrained("NepBERTa/NepBERTa")
 
     nbt5_model = NBT5(t5_model, nepBerta_model, device=device)
@@ -24,6 +24,8 @@ def load_model():
     nbt5_tokenizer = t5_tokenizer
     nbt5_tokenizer.add_tokens(nepBerta_tokenizer.additional_special_tokens)
     nbt5_tokenizer.add_tokens(nepBerta_tokenizer.all_special_tokens)
+
+    # TODO - There's an issue with these keys. Fix them in the next commit
     nbt5_tokenizer.add_tokens(nepBerta_tokenizer.all_special_ids)
     nbt5_tokenizer.add_tokens(nepBerta_tokenizer.all_vocab_tokens)
     nbt5_tokenizer.add_tokens(nepBerta_tokenizer.all_vocab_ids)

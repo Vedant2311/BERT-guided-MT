@@ -11,14 +11,11 @@ parser.add_argument("--test", action="store_true")
 
 args = parser.parse_args()
 
-tokenizer = AutoTokenizer.from_pretrained("NepBERTa/NepBERTa")
-model = AutoModelForMaskedLM.from_pretrained("NepBERTa/NepBERTa")
-
 def load_model():
     mBart_model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-50")
     mBart_tokenizer = MBart50TokenizerFast.from_pretrained("facebook/mbart-large-50", src_lang="ne_NP", tgt_lang="en_XX")
 
-    nepBerta_model = AutoModelForMaskedLM.from_pretrained("NepBERTa/NepBERTa")
+    nepBerta_model = AutoModelForMaskedLM.from_pretrained("NepBERTa/NepBERTa", from_tf=True)
     nepBerta_tokenizer = AutoTokenizer.from_pretrained("NepBERTa/NepBERTa")
 
     nbmb_model = NBmB(mBart_model, nepBerta_model, device=device)
@@ -27,6 +24,8 @@ def load_model():
     nbmb_tokenizer = mBart_tokenizer
     nbmb_tokenizer.add_tokens(nepBerta_tokenizer.additional_special_tokens)
     nbmb_tokenizer.add_tokens(nepBerta_tokenizer.all_special_tokens)
+
+    # TODO - There's an issue with these keys. Fix them in the next commit
     nbmb_tokenizer.add_tokens(nepBerta_tokenizer.all_special_ids)
     nbmb_tokenizer.add_tokens(nepBerta_tokenizer.all_vocab_tokens)
     nbmb_tokenizer.add_tokens(nepBerta_tokenizer.all_vocab_ids)
