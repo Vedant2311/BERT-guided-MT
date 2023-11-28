@@ -6,12 +6,15 @@ import torch
 from datasets import load_dataset
 
 # datasets
-DIR_PATH = "/Users/ryanmarr/Downloads/nedata"
-dataset_np = load_dataset("text", data_files= {"train": f"{DIR_PATH}/train.ne_NP.txt", "test": f"{DIR_PATH}/test.ne_NP.txt"})
-dataset_en = load_dataset("text", data_files={"train": f"{DIR_PATH}/train.en_XX.txt", "test": f"{DIR_PATH}/test.en_XX.txt"})
+DIR_PATH = "../dataset"
+dataset_np = load_dataset("text", data_files= {"train": f"{DIR_PATH}/train_raw/train.ne_NP", "test": f"{DIR_PATH}/test_raw/test.ne_NP"})
+dataset_en = load_dataset("text", data_files={"train": f"{DIR_PATH}/train_raw/train.en_XX", "test": f"{DIR_PATH}/test_raw/test.en_XX"})
 
 # A flag to see whether we are fine-tuning the model or not
 fine_tune = False
+
+# Number of sentences to test on. Set to falsey value (e.g. None) to test on all sentences
+N = 3
 
 #initlaize model and tokenizer
 model_name = "facebook/mbart-large-50-many-to-many-mmt"
@@ -99,7 +102,11 @@ english_references = dataset_en["test"]
 generated_translations = []
 
 #for each nepali sentence, generate english translation, and add to generated translations
+n = 0
 for nepali_sentence in nepali_sentences:
+    if N and n == N:
+        break
+    n += 1
     #input tokens in nepali created by tokenizer
     input_ids = tokenizer(nepali_sentence['text'], return_tensors="pt").input_ids
 
@@ -116,7 +123,13 @@ for nepali_sentence in nepali_sentences:
     generated_translations.append(english_translation)
 
 #calculate bleu score
-bleu_score = corpus_bleu([[reference] for reference in english_references], generated_translations)
+# map each sentence to a [ sentence.split() ]
+if N:
+    references = [[reference.split()] for reference in english_references["text"][:N]]
+else:
+    references = [[reference.split()] for reference in english_references["text"]]
+hypotheses = [gen.split() for gen in generated_translations]
+bleu_score = corpus_bleu(references, hypotheses)
 
 #print bleu score
 print("bleu score: ", bleu_score)
