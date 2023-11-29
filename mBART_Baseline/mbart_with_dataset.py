@@ -1,5 +1,5 @@
 from torch.utils.data import Dataset, DataLoader
-from transformers import MBartForConditionalGeneration, MBart50TokenizerFast
+from transformers import MBartForConditionalGeneration, MBart50TokenizerFast, AutoConfig
 from transformers.optimization import AdamW
 from nltk.translate.bleu_score import corpus_bleu
 import torch
