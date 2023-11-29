@@ -4,22 +4,29 @@ from datasets import load_dataset
 from nltk.translate.bleu_score import corpus_bleu
 import torch
 from datasets import load_dataset
+from tqdm import tqdm
 
 # datasets
-DIR_PATH = "../dataset"
+DIR_PATH = "dataset"
 dataset_np = load_dataset("text", data_files= {"train": f"{DIR_PATH}/train_raw/train.ne_NP", "test": f"{DIR_PATH}/test_raw/test.ne_NP"})
 dataset_en = load_dataset("text", data_files={"train": f"{DIR_PATH}/train_raw/train.en_XX", "test": f"{DIR_PATH}/test_raw/test.en_XX"})
 
 # A flag to see whether we are fine-tuning the model or not
 fine_tune = False
 
-# Number of sentences to test on. Set to falsey value (e.g. None) to test on all sentences
-N = 3
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+# Number of sentences to test on. Set to false value (e.g. None) to test on all sentences
+N = None
 
 #initlaize model and tokenizer
 model_name = "facebook/mbart-large-50-many-to-many-mmt"
 model = MBartForConditionalGeneration.from_pretrained(model_name)
 tokenizer = MBart50TokenizerFast.from_pretrained(model_name)
+
+model.to(device)
+
+print(device)
 
 #english and nepali language codes
 tokenizer.src_lang = "ne_NP"
@@ -29,7 +36,7 @@ tokenizer.tgt_lang = "en_XX"
 nepali_text = "नमस्ते, मेरो नाम त्रेवर हो।"
 
 #input tokens in nepali created by tokenizer
-input_ids = tokenizer(nepali_text, return_tensors="pt").input_ids
+input_ids = tokenizer(nepali_text, return_tensors="pt").input_ids.to(device)
 
 #find forced beginning of sentence token id
 forced_bos_token_id = tokenizer.lang_code_to_id["en_XX"]
@@ -41,6 +48,7 @@ outputs = model.generate(input_ids=input_ids, forced_bos_token_id=forced_bos_tok
 english_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 #print english translation
+print(english_text)
 
 #get a dataset from dataloader we create.
 #TODO look into how can we load the dataset from the individual separate raw data files for Nepali and English
@@ -102,13 +110,14 @@ english_references = dataset_en["test"]
 generated_translations = []
 
 #for each nepali sentence, generate english translation, and add to generated translations
+
 n = 0
-for nepali_sentence in nepali_sentences:
+for nepali_sentence in tqdm(nepali_sentences):
     if N and n == N:
         break
     n += 1
     #input tokens in nepali created by tokenizer
-    input_ids = tokenizer(nepali_sentence['text'], return_tensors="pt").input_ids
+    input_ids = tokenizer(nepali_sentence['text'], return_tensors="pt").input_ids.to(device)
 
     #find forced beginning of sentence token id
     forced_bos_token_id = tokenizer.lang_code_to_id["en_XX"]
@@ -121,7 +130,7 @@ for nepali_sentence in nepali_sentences:
     
     # add english sentence to generated translations
     generated_translations.append(english_translation)
-
+    
 #calculate bleu score
 # map each sentence to a [ sentence.split() ]
 if N:
