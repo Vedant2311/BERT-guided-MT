@@ -45,7 +45,22 @@ DIR_PATH = "/workspace"
 BATCH_SIZE = 100
 
 # A flag to see whether we are fine-tuning the model or not
-fine_tune = True
+fine_tune = False
+
+# A flag to see whether we are using the mBART architecture without pre-training or with it
+pre_trained = False
+
+print('init models')
+#initlaize model and tokenizer
+model_name = "facebook/mbart-large-50-many-to-many-mmt"
+if pre_trained:
+    model = MBartForConditionalGeneration.from_pretrained(model_name)
+    tokenizer = MBart50TokenizerFast.from_pretrained(model_name)
+else:
+    config = AutoConfig.from_pretrained(model_name)
+    model = MBartForConditionalGeneration._from_config(config)
+    tokenizer = MBart50TokenizerFast.from_pretrained(model_name)
+
 
 print('init models')
 #initlaize model and tokenizer
