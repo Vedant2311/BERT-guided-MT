@@ -1,3 +1,45 @@
+from torch.utils.data import Dataset, DataLoader
+from transformers import MBartForConditionalGeneration, MBart50TokenizerFast
+from transformers.optimization import AdamW
+from nltk.translate.bleu_score import corpus_bleu
+import torch
+from datasets import load_dataset
+
+class LanguageDataset(Dataset):                                  
+
+    def __init__(self, ne_file, en_file, max_length, tokenizer):
+        self.ne_file = en_file
+        self.en_file = ne_file
+        self.max_length = max_length
+        self.tokenizer = tokenizer
+        self.ne_token = []
+        self.en_token = []
+        with open(self.ne_file) as file:
+            for sentence in file:
+                # is padding token 1?
+                sentence = sentence.strip()
+                tokens = tokenizer(sentence, max_length=self.max_length, return_tensors="pt", truncation=False, padding='max_length')
+                self.ne_token.append(tokens)
+        with open(self.en_file) as file:
+            for sentence in file:
+                # is padding token 1?
+                sentence = sentence.strip()
+                tokens = tokenizer(sentence, max_length=self.max_length, return_tensors="pt", truncation=False, padding='max_length')
+                self.en_token.append(tokens)
+                    
+    def __len__(self):
+        return len(self.ne_token)
+              
+    # input_ids attention_mask encoder_mask decoder_mask 
+    # come back and fix shitty [0]
+    def __getitem__(self, idx):
+        return {
+            'input_ids': self.ne_token[idx]['input_ids'][0],
+            'attention_mask': self.ne_token[idx]['attention_mask'][0],
+            'decoder_input_ids': self.en_token[idx]['input_ids'][0],
+            'decoder_attention_mask': self.en_token[idx]['attention_mask'][0],
+        }
+
 # datasets
 DIR_PATH = "/workspace"
 BATCH_SIZE = 100
