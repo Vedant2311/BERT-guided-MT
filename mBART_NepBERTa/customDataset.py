@@ -33,7 +33,7 @@ class NepaliEnglishDataset(Dataset):
         return torch.tensor(tokens + padding), torch.tensor(text_len)
     
     def tokenize_mbart_label(self, src, trg, tokenizer):
-        inputs = tokenizer(src, text_target=trg)
+        inputs = tokenizer(src, text_target=trg, max_length=self.max_length, truncation=True)
         mbart_input_ids = inputs["input_ids"]
         mbart_input_ids_len = len(mbart_input_ids)
         padding = [tokenizer.pad_token_id] * (self.max_length - mbart_input_ids_len)
@@ -47,7 +47,7 @@ class NepaliEnglishDataset(Dataset):
         return torch.tensor(tokens), torch.tensor(text_len)
     
     def tokenize_mbart_label_test(self, src, trg, tokenizer):
-        inputs = tokenizer(src, text_target=trg)
+        inputs = tokenizer(src, text_target=trg, max_length=self.max_length, truncation=True)
         mbart_input_ids = inputs["input_ids"]
         mbart_input_ids_len = len(mbart_input_ids)
         labels = inputs["labels"]
@@ -66,7 +66,7 @@ class NepaliEnglishDataset(Dataset):
                 padding = [self.bert_tokenizer.pad_token_id] * (mbart_input_ids_len - input_ids_len)
                 input_ids = torch.tensor(input_ids.tolist() + padding)
 
-            return input_ids, None, labels, mbart_input_ids, None, input_ids_len
+            return input_ids, labels, mbart_input_ids
         
         else:
             row = self.data.iloc[idx]
