@@ -42,6 +42,16 @@ class NBmB(nn.Module):
         nepBerta_encoding[:, 0, :] = 0
 
         mBart_encoding = self.mBart_embed(mbart_input_ids)
+        
+        # make the sizes same by padding zeros
+        if nepBerta_encoding.size(1) < mBart_encoding.size(1):
+            padding = torch.zeros(nepBerta_encoding.size(0), mBart_encoding.size(1) - nepBerta_encoding.size(1), nepBerta_encoding.size(2)).to(nepBerta_encoding.device)
+            nepBerta_encoding = torch.cat((nepBerta_encoding, padding), dim=1).to(input_ids.device)
+        elif nepBerta_encoding.size(1) > mBart_encoding.size(1):
+            padding = torch.zeros(mBart_encoding.size(0), nepBerta_encoding.size(1) - mBart_encoding.size(1), mBart_encoding.size(2)).to(mbart_input_ids.device)
+            mBart_encoding = torch.cat((mBart_encoding, padding), dim=1).to(mbart_input_ids.device)
+
+
         # Fuse by adding the two matrices
         fused_encoding = torch.add(nepBerta_encoding, mBart_encoding)
 

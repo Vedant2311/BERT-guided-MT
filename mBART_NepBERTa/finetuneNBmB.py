@@ -128,13 +128,15 @@ def test(nbmb_model, nepBerta_tokenizer, mBart_tokenizer):
     nbmb_model.eval()
     with torch.no_grad():
         for batch in tqdm(test_dataloader, desc="Test Loop"):
-            batch = tuple(t.to(device) for t in batch if t is not None)
+            batch = tuple(t.to(device) for t in batch)
             input_ids, labels, mbart_input_ids = batch
             model_translation = nbmb_model.module.generate(input_ids, mbart_input_ids)
             generated_translations.append(model_translation)
 
             target.append(mBart_tokenizer.batch_decode(labels))
 
+    # print("target: ", target)
+    # print("generated_translations: ", generated_translations)
     bleu_score = corpus_bleu([[t] for t in target], generated_translations) * 100
 
     print(f"BLEU Score: {bleu_score}")
