@@ -6,20 +6,17 @@ import torch
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--finetune", action="store_true")
-parser.add_argument("--test", action="store_true")
+parser.add_argument("--finetune", "-f", action="store_true")
+parser.add_argument("--test", "-t", action="store_true")
 
 args = parser.parse_args()
-
-tokenizer = AutoTokenizer.from_pretrained("NepBERTa/NepBERTa")
-model = AutoModelForMaskedLM.from_pretrained("NepBERTa/NepBERTa")
 
 def load_model():
     mBart_model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-50")
     mBart_tokenizer = MBart50TokenizerFast.from_pretrained("facebook/mbart-large-50", src_lang="ne_NP", tgt_lang="en_XX")
 
-    nepBerta_model = AutoModelForMaskedLM.from_pretrained("NepBERTa/NepBERTa")
-    nepBerta_tokenizer = AutoTokenizer.from_pretrained("NepBERTa/NepBERTa")
+    nepBerta_model = AutoModelForMaskedLM.from_pretrained("tf_model.h5")
+    nepBerta_tokenizer = AutoTokenizer.from_pretrained("vocab.txt")
 
     nbmb_model = NBmB(mBart_model, nepBerta_model, device=device)
 

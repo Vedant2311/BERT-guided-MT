@@ -1,0 +1,1 @@
+rsync --progress -r exclude=dataset . yoonsoon@hpc-transfer1.usc.edu:/scratch1/yoonsoon/machine_translate
