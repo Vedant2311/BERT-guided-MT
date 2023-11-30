@@ -109,7 +109,7 @@ def finetune():
         print(f"Epoch: {epoch+1} Train Loss: {train_loss}")
 
         # save model
-        torch.save(nbmb_model.state_dict(), "saved_models/nbmb_model_{epoch}.pth")
+        torch.save(nbmb_model.state_dict(), f"saved_models/nbmb_model_{epoch}.pth")
 
         # run dev
         run_dev(nbmb_model, nepBerta_tokenizer, mBart_tokenizer)
