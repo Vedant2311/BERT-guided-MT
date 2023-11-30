@@ -66,7 +66,7 @@ class NepaliEnglishDataset(Dataset):
                 padding = [self.bert_tokenizer.pad_token_id] * (mbart_input_ids_len - input_ids_len)
                 input_ids = torch.tensor(input_ids.tolist() + padding)
 
-            return input_ids, None, labels, mbart_input_ids, None, input_ids_len
+            return input_ids, labels, mbart_input_ids
         
         else:
             row = self.data.iloc[idx]

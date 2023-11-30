@@ -129,7 +129,7 @@ def test(nbmb_model, nepBerta_tokenizer, mBart_tokenizer):
     with torch.no_grad():
         for batch in tqdm(test_dataloader, desc="Test Loop"):
             batch = tuple(t.to(device) for t in batch if t is not None)
-            input_ids, encoder_mask, labels, mbart_input_ids, mbart_input_mask, input_ids_len = batch
+            input_ids, labels, mbart_input_ids = batch
             model_translation = nbmb_model.module.generate(input_ids, mbart_input_ids)
             generated_translations.append(model_translation)
 
