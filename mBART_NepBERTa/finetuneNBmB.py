@@ -3,7 +3,7 @@ from transformers import MBartForConditionalGeneration, MBart50TokenizerFast
 from NBmB import NBmB
 import argparse
 import torch
-from customDataset import NepaliEnglishDataset, custom_collate_fn
+from customDataset import NepaliEnglishDataset
 from tqdm import tqdm
 import wandb
 from nltk.translate.bleu_score import corpus_bleu
