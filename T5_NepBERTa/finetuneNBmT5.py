@@ -137,8 +137,8 @@ def test(nbmt5_model, nepBerta_tokenizer, mT5_tokenizer):
 
     # A post-processing step to remove the unnecessary tokens like <str> that occur during generation
     pattern = r'<.*?>'
-    generated_translations = [re.sub(pattern, '', input_string) for input_string in generated_translations]
-    target = [re.sub(pattern, '', input_string) for input_string in target]
+    generated_translations = [[re.sub(pattern, '', input_string[0])] for input_string in generated_translations]
+    target = [[re.sub(pattern, '', input_string[0])] for input_string in target]
 
     bleu_score = corpus_bleu([[t] for t in target], generated_translations) * 100
 
