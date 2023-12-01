@@ -35,7 +35,7 @@ class NepaliEnglishDataset(Dataset):
         return torch.tensor(tokens + padding), torch.tensor(text_len)
     
     def tokenize_mT5_label(self, src, trg, tokenizer):
-        inputs = tokenizer(src, text_target=trg)
+        inputs = tokenizer(src, text_target=trg, max_length=self.max_length, truncation=True)
         mT5_input_ids = inputs["input_ids"]
         mT5_input_ids_len = len(mT5_input_ids)
         padding = [tokenizer.pad_token_id] * (self.max_length - mT5_input_ids_len)
@@ -49,7 +49,7 @@ class NepaliEnglishDataset(Dataset):
         return torch.tensor(tokens), torch.tensor(text_len)
     
     def tokenize_mT5_label_test(self, src, trg, tokenizer):
-        inputs = tokenizer(src, text_target=trg)
+        inputs = tokenizer(src, text_target=trg, max_length=self.max_length, truncation=True)
         mT5_input_ids = inputs["input_ids"]
         mT5_input_ids_len = len(mT5_input_ids)
         labels = inputs["labels"]
