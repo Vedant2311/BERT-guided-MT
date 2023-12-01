@@ -3,3 +3,5 @@ dataset/analysis/*
 */.DS_Store
 *.txt
 */wandb
+*/saved_models
+*.pyc
