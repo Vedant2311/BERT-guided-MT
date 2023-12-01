@@ -4,3 +4,4 @@ dataset/analysis/*
 *.txt
 */wandb
 */saved_models
+*.pyc

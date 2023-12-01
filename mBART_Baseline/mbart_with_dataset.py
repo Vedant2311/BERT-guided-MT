@@ -5,7 +5,10 @@ from nltk.translate.bleu_score import corpus_bleu
 import torch
 from datasets import load_dataset
 
-class LanguageDataset(Dataset):                                  
+# pip transformers nltk datasets sentencepiece protobuf
+
+
+class LanguageDataset(Dataset):
 
     def __init__(self, ne_file, en_file, max_length, tokenizer):
         self.ne_file = en_file
@@ -18,19 +21,21 @@ class LanguageDataset(Dataset):
             for sentence in file:
                 # is padding token 1?
                 sentence = sentence.strip()
-                tokens = tokenizer(sentence, max_length=self.max_length, return_tensors="pt", truncation=False, padding='max_length')
+                tokens = tokenizer(sentence, max_length=self.max_length,
+                                   return_tensors="pt", truncation=False, padding='max_length')
                 self.ne_token.append(tokens)
         with open(self.en_file) as file:
             for sentence in file:
                 # is padding token 1?
                 sentence = sentence.strip()
-                tokens = tokenizer(sentence, max_length=self.max_length, return_tensors="pt", truncation=False, padding='max_length')
+                tokens = tokenizer(sentence, max_length=self.max_length,
+                                   return_tensors="pt", truncation=False, padding='max_length')
                 self.en_token.append(tokens)
-                    
+
     def __len__(self):
         return len(self.ne_token)
-              
-    # input_ids attention_mask encoder_mask decoder_mask 
+
+    # input_ids attention_mask encoder_mask decoder_mask
     # come back and fix shitty [0]
     def __getitem__(self, idx):
         return {
@@ -40,18 +45,25 @@ class LanguageDataset(Dataset):
             'decoder_attention_mask': self.en_token[idx]['attention_mask'][0],
         }
 
+
+if torch.cuda.is_available():
+    device = 'cuda'
+else:
+    print("cuda unavailable, using cpu")
+    device = 'cpu'
+
 # datasets
-DIR_PATH = "/workspace"
+DIR_PATH = "dataset"
 BATCH_SIZE = 100
 
 # A flag to see whether we are fine-tuning the model or not
 fine_tune = False
 
 # A flag to see whether we are using the mBART architecture without pre-training or with it
-pre_trained = False
+pre_trained = True
 
 print('init models')
-#initlaize model and tokenizer
+# initlaize model and tokenizer
 model_name = "facebook/mbart-large-50-many-to-many-mmt"
 if pre_trained:
     model = MBartForConditionalGeneration.from_pretrained(model_name)
@@ -63,13 +75,15 @@ else:
 
 
 print('init models')
-#initlaize model and tokenizer
+# initlaize model and tokenizer
 model_name = "facebook/mbart-large-50-many-to-many-mmt"
 model = MBartForConditionalGeneration.from_pretrained(model_name)
 tokenizer = MBart50TokenizerFast.from_pretrained(model_name)
 tokenizer.src_lang = "ne_NP"
 tokenizer.tgt_lang = "en_XX"
 print('done')
+
+model = model.to(device)
 
 # #text that says hi my name is trevor in nepali
 # nepali_text = "नमस्ते, मेरो नाम त्रेवर हो।"
@@ -91,18 +105,19 @@ You can check out references like these to understand the code better:
 if fine_tune:
     print('fine tuning')
     # Moving the model to CUDA
-    model = model.cuda()
 
     optimizer = AdamW(model.parameters(), lr=1e-4)
     model.train()
-    
+
     # Creating a training batch using torch dataloader
     print('prepping data')
-    train_dataset = LanguageDataset(f'{DIR_PATH}/train.ne_NP.txt', f'{DIR_PATH}/train.en_XX.txt', BATCH_SIZE, tokenizer)
+    train_dataset = LanguageDataset(
+        f'{DIR_PATH}/train.ne_NP.txt', f'{DIR_PATH}/train.en_XX.txt', BATCH_SIZE, tokenizer)
     print(train_dataset)
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     print('done')
-    
+
     num_epochs = 20
     # Fine-tune for the specified number of epochs
     for i in range(num_epochs):
@@ -114,46 +129,58 @@ if fine_tune:
             labels = model_inputs['decoder_input_ids']
             optimizer.zero_grad()
             # are args being passed correct???
-            output = model(**model_inputs, labels=labels) # forward pass
+            output = model(**model_inputs, labels=labels)  # forward pass
             loss = output.loss
-            loss.backward() # Backward pass
+            loss.backward()  # Backward pass
 
 # Test
-#get nepali sentences and english references
-dataset_np = load_dataset("text", data_files= {"train": f"{DIR_PATH}/train.ne_NP.txt", "test": f"{DIR_PATH}/test.ne_NP.txt"})
-dataset_en = load_dataset("text", data_files={"train": f"{DIR_PATH}/train.en_XX.txt", "test": f"{DIR_PATH}/test.en_XX.txt"})
+# get nepali sentences and english references
+dataset_np = load_dataset("text", data_files={
+                          "train": f"{DIR_PATH}/train_raw/train.ne_NP", "test": f"{DIR_PATH}/test_raw/test.ne_NP"})
+dataset_en = load_dataset("text", data_files={
+                          "train": f"{DIR_PATH}/train_raw/train.en_XX", "test": f"{DIR_PATH}/test_raw/test.en_XX"})
 nepali_sentences = dataset_np["test"]
 english_references = dataset_en["test"]
 
-#init generated translations
+# init generated translations
 generated_translations = []
 
-#for each nepali sentence, generate english translation, and add to generated translations
-for nepali_sentence in nepali_sentences:
-    #input tokens in nepali created by tokenizer
-    input_ids = tokenizer(nepali_sentence['text'], return_tensors="pt").input_ids.to('cuda')
+x = 0
 
-    #find forced beginning of sentence token id
+# for each nepali sentence, generate english translation, and add to generated translations
+for nepali_sentence in nepali_sentences:
+    x += 1
+    print(x, end='\r')
+
+    # input tokens in nepali created by tokenizer
+    input_ids = tokenizer(
+        nepali_sentence['text'], return_tensors="pt").input_ids.to(device)
+
+    # find forced beginning of sentence token id
     forced_bos_token_id = tokenizer.lang_code_to_id["en_XX"]
 
-    #generate english translation
-    outputs = model.generate(input_ids=input_ids, forced_bos_token_id=forced_bos_token_id, max_length=BATCH_SIZE)
+    # generate english translation
+    outputs = model.generate(
+        input_ids=input_ids, forced_bos_token_id=forced_bos_token_id, max_length=BATCH_SIZE, num_beams=5)
 
-    #decode generated english translation back into a sentence
-    english_translation = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    
+    # decode generated english translation back into a sentence
+    english_translation = tokenizer.decode(
+        outputs[0], skip_special_tokens=True)
+
     # add english sentence to generated translations
     generated_translations.append(english_translation)
 
-#calculate bleu score
+# calculate bleu score
 # map each sentence to a [ sentence.split() ]
 N = 0
 if N:
-    references = [[reference.split()] for reference in english_references["text"][:N]]
+    references = [[reference.split()]
+                  for reference in english_references["text"][:N]]
 else:
-    references = [[reference.split()] for reference in english_references["text"]]
+    references = [[reference.split()]
+                  for reference in english_references["text"]]
 hypotheses = [gen.split() for gen in generated_translations]
 bleu_score = corpus_bleu(references, hypotheses)
 
-#print bleu score
+# print bleu score
 print("bleu score: ", bleu_score)
