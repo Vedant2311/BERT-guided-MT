@@ -67,8 +67,11 @@ class NepaliEnglishDataset(Dataset):
             if input_ids_len < mT5_input_ids_len:
                 padding = [self.bert_tokenizer.pad_token_id] * (mT5_input_ids_len - input_ids_len)
                 input_ids = torch.tensor(input_ids.tolist() + padding)
+            elif input_ids_len > mT5_input_ids_len:
+                padding = [self.mT5_tokenizer.pad_token_id] * (input_ids_len - mT5_input_ids_len)
+                mT5_input_ids = torch.tensor(mT5_input_ids.tolist() + padding)
 
-            return input_ids, None, labels, mT5_input_ids, None, input_ids_len
+            return input_ids, labels, mT5_input_ids
         
         else:
             row = self.data.iloc[idx]
@@ -77,28 +80,18 @@ class NepaliEnglishDataset(Dataset):
             input_ids, input_ids_len = self.tokenize_data(src_text, self.bert_tokenizer)
             encoder_mask = (input_ids != self.bert_tokenizer.pad_token_id).long()
 
-            mT5_input_ids, labels, mT5_input_ids_len = self.tokenize_mT5_label(src_text, trg_text, self.mT5_tokenizer)
+            mT5_input_ids, labels, _ = self.tokenize_mT5_label(src_text, trg_text, self.mT5_tokenizer)
             mT5_input_mask = (mT5_input_ids != self.mT5_tokenizer.pad_token_id).long()
 
             return input_ids, encoder_mask, labels, mT5_input_ids, mT5_input_mask, input_ids_len
         
-def custom_collate_fn(batch):
-    input_ids, encoder_masks, labels, mT5_input_ids, mT5_input_masks, input_ids_lens = zip(*batch)
-    input_ids = torch.stack(input_ids, dim=0)
-    encoder_masks = torch.stack(encoder_masks, dim=0)
-    labels = torch.stack(labels, dim=0)
-    mT5_input_ids = torch.stack(mT5_input_ids, dim=0)
-    mT5_input_masks = torch.stack(mT5_input_masks, dim=0)
-    input_ids_lens = torch.stack(input_ids_lens, dim=0)
-    return input_ids, encoder_masks, labels, mT5_input_ids, mT5_input_masks, input_ids_lens
-
 if __name__ == "__main__":
     # test the dataset
     bert_tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-cased")
     mT5_tokenizer = T5Tokenizer.from_pretrained("google/mt5-base")
     max_length = 128
-    src_data_path = "../dataset/train_raw/train.ne_NP"
-    trg_data_path = "../dataset/train_raw/train.en_XX"
+    src_data_path = "../dataset/test_raw/test.ne_NP"
+    trg_data_path = "../dataset/test_raw/test.en_XX"
 
     dataset = NepaliEnglishDataset(bert_tokenizer, mT5_tokenizer, max_length, src_data_path, trg_data_path)
 

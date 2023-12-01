@@ -3,10 +3,11 @@ from transformers import MT5ForConditionalGeneration, T5Tokenizer
 from NBmT5 import NBmT5
 import argparse
 import torch
-from customDataset import NepaliEnglishDataset, custom_collate_fn
+from customDataset import NepaliEnglishDataset
 from tqdm import tqdm
 import wandb
 from nltk.translate.bleu_score import corpus_bleu
+import re
 
 import tensorflow as tf
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -51,6 +52,7 @@ def load_model():
         print("Using DataParallel for NBmT5")
 
     nbmt5_model.to(device)
+
     return nbmt5_model, nepBerta_tokenizer, mT5_tokenizer
 
 def run_dev(nbmt5_model, nepBerta_tokenizer, mT5_tokenizer):
@@ -108,7 +110,7 @@ def finetune():
         print(f"Epoch: {epoch+1} Train Loss: {train_loss}")
 
         # save model
-        torch.save(nbmt5_model.state_dict(), "saved_models/nbmt5_model_{epoch}.pth")
+        torch.save(nbmt5_model.state_dict(), f"saved_models/nbmt5_model_{epoch}.pth")
 
         # run dev
         run_dev(nbmt5_model, nepBerta_tokenizer, mT5_tokenizer)
@@ -128,11 +130,15 @@ def test(nbmt5_model, nepBerta_tokenizer, mT5_tokenizer):
     with torch.no_grad():
         for batch in tqdm(test_dataloader, desc="Test Loop"):
             batch = tuple(t.to(device) for t in batch if t is not None)
-            input_ids, encoder_mask, labels, mT5_input_ids, mT5_input_mask, input_ids_len = batch
-            model_translation = nbmt5_model.module.generate(input_ids, mT5_input_ids)
+            input_ids, labels, mT5_input_ids = batch
+            model_translation = nbmt5_model.generate(input_ids, mT5_input_ids)
             generated_translations.append(model_translation)
-
             target.append(mT5_tokenizer.batch_decode(labels))
+
+    # A post-processing step to remove the unnecessary tokens like <str> that occur during generation
+    pattern = r'<.*?>'
+    generated_translations = [re.sub(pattern, '', input_string) for input_string in generated_translations]
+    target = [re.sub(pattern, '', input_string) for input_string in target]
 
     bleu_score = corpus_bleu([[t] for t in target], generated_translations) * 100
 
@@ -152,5 +158,4 @@ def main():
         print("Please specify --finetune or --test")
 
 if __name__ == "__main__":
-
     main()

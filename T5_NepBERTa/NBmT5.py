@@ -39,6 +39,14 @@ class NBmT5(nn.Module):
 
         inputs = {"inputs_embeds": fused_encoding}
 
+        # make the sizes same by padding zeros
+        if nepBerta_encoding.size(1) < mT5_encoding.size(1):
+            padding = torch.zeros(nepBerta_encoding.size(0), mT5_encoding.size(1) - nepBerta_encoding.size(1), nepBerta_encoding.size(2)).to(nepBerta_encoding.device)
+            nepBerta_encoding = torch.cat((nepBerta_encoding, padding), dim=1).to(input_ids.device)
+        elif nepBerta_encoding.size(1) > mT5_encoding.size(1):
+            padding = torch.zeros(mT5_encoding.size(0), nepBerta_encoding.size(1) - mT5_encoding.size(1), mT5_encoding.size(2)).to(mT5_input_ids.device)
+            mT5_encoding = torch.cat((mT5_encoding, padding), dim=1).to(mT5_input_ids.device)
+
         generated_ids = self.mT5_model.generate(
             **inputs,
             use_cache=True,
