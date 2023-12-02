@@ -8,14 +8,28 @@ class NBmB(nn.Module):
         self.mBart_model = mBart_model
         self.mBart_embed = mBart_model.get_input_embeddings()
         self.nepBerta_model = nepBerta_model
-        self.fc = nn.Linear(768, 1024)
+
+        # Freezing the parameters of the mBART and NepBERTa model
+        for param in self.mBart_model.parameters():
+            param.requires_grad = False
+        for param in self.nepBerta_model.parameters():
+            param.requires_grad = False        
+
+        self.mlp = nn.Sequential(
+            nn.Linear(768, 768),
+            nn.GELU(),
+            nn.Linear(768, 1024),
+            nn.GELU(),
+            nn.Linear(1024, 1024),
+            nn.GELU()
+        )
         self.mBart_tokenizer = mBart_tokenizer
 
     def forward(self, input_ids, encoder_mask, labels, mbart_input_ids, mbart_input_mask, input_ids_len):        
         # NepBERTa
         nepBerta_output = self.nepBerta_model(input_ids=input_ids, attention_mask=encoder_mask)
         nepBerta_encoding = nepBerta_output.hidden_states[-1]
-        nepBerta_encoding = self.fc(nepBerta_encoding)
+        nepBerta_encoding = self.mlp(nepBerta_encoding)
         nepBerta_encoding[:, 0, :] = 0
 
         mBart_encoding = self.mBart_embed(mbart_input_ids)
@@ -36,7 +50,7 @@ class NBmB(nn.Module):
         # NepBERTa
         nepBerta_output = self.nepBerta_model(input_ids=input_ids)
         nepBerta_encoding = nepBerta_output.hidden_states[-1]
-        nepBerta_encoding = self.fc(nepBerta_encoding)
+        nepBerta_encoding = self.mlp(nepBerta_encoding)
 
         # zero out the first token
         nepBerta_encoding[:, 0, :] = 0
@@ -50,7 +64,6 @@ class NBmB(nn.Module):
         elif nepBerta_encoding.size(1) > mBart_encoding.size(1):
             padding = torch.zeros(mBart_encoding.size(0), nepBerta_encoding.size(1) - mBart_encoding.size(1), mBart_encoding.size(2)).to(mbart_input_ids.device)
             mBart_encoding = torch.cat((mBart_encoding, padding), dim=1).to(mbart_input_ids.device)
-
 
         # Fuse by adding the two matrices
         fused_encoding = torch.add(nepBerta_encoding, mBart_encoding)

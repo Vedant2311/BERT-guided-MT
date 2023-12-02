@@ -18,7 +18,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 parser = argparse.ArgumentParser()
 parser.add_argument("--finetune", "-f", action="store_true")
 parser.add_argument("--test", "-t", action="store_true")
-parser.add_argument("--epoch", "-e", type=int, default=20)
+parser.add_argument("--epoch", "-e", type=int, default=50)
 parser.add_argument("--batch_size", "-b", type=int, default=8)
 parser.add_argument("--lr", "-l", type=float, default=1e-5)
 parser.add_argument("--wandb", "-w", action="store_true", default=False)
@@ -33,7 +33,7 @@ if args.wandb:
                     "lr": args.lr
                })
 
-def load_model():
+def load_model():    
     mBart_model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-50", output_hidden_states=True)
     mBart_tokenizer = MBart50TokenizerFast.from_pretrained("facebook/mbart-large-50", src_lang="ne_NP", tgt_lang="en_XX")
 
@@ -62,6 +62,7 @@ def run_dev(nbmb_model, nepBerta_tokenizer, mBart_tokenizer):
     nbmb_model.eval()
     with torch.no_grad():
         for batch in tqdm(dataloader, desc="Dev Loop"):
+            batch = tuple(t.to(device) for t in batch)
             input_ids, encoder_mask, labels, mbart_input_ids, mbart_input_mask, input_ids_len = batch
             output = nbmb_model(input_ids, encoder_mask, labels, mbart_input_ids, mbart_input_mask, input_ids_len)
 
@@ -91,6 +92,7 @@ def finetune():
 
         train_loss = 0
         for batch in tqdm(dataloader, desc="Batch Splitting Loop"):
+            batch = tuple(t.to(device) for t in batch)
             input_ids, encoder_mask, labels, mbart_input_ids, mbart_input_mask, input_ids_len = batch
             output = nbmb_model(input_ids, encoder_mask, labels, mbart_input_ids, mbart_input_mask, input_ids_len)
 
@@ -118,6 +120,17 @@ def finetune():
         test(nbmb_model, nepBerta_tokenizer, mBart_tokenizer)
 
 def test(nbmb_model, nepBerta_tokenizer, mBart_tokenizer):
+    import string
+    def smart_split(s):
+        # treat most punctuation as separate words
+        spaced_string = ""
+        for c in s:
+            if c in string.punctuation and c != "'":
+                spaced_string += " " + c + " "
+            else:
+                spaced_string += c
+        return spaced_string.split()
+
     #init generated translations
     generated_translations, target = [], []
     
@@ -132,12 +145,12 @@ def test(nbmb_model, nepBerta_tokenizer, mBart_tokenizer):
             input_ids, labels, mbart_input_ids = batch
             model_translation = nbmb_model.module.generate(input_ids, mbart_input_ids)
             generated_translations.append(model_translation)
-
             target.append(mBart_tokenizer.batch_decode(labels))
 
-    # print("target: ", target)
-    # print("generated_translations: ", generated_translations)
-    bleu_score = corpus_bleu([[t] for t in target], generated_translations) * 100
+    split_predictions = [smart_split(pred) for pred in generated_translations]
+    split_references = [[smart_split(ref) for ref in ref_list] for ref_list in target]
+
+    bleu_score = corpus_bleu(split_references, split_predictions) * 100
 
     print(f"BLEU Score: {bleu_score}")
 
