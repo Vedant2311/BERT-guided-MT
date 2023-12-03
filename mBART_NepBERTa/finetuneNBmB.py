@@ -50,6 +50,10 @@ def load_model():
         nbmb_model = torch.nn.DataParallel(nbmb_model)
         print("Using DataParallel for NBmB")
 
+    # Loading the saved checkpoint for the zeroth epoch since the previous script was killed
+    checkpoint = torch.load("saved_models/nbmb_model_0.pth")
+    nbmb_model.load_state_dict(checkpoint)
+
     nbmb_model.to(device)
 
     return nbmb_model, nepBerta_tokenizer, mBart_tokenizer
@@ -111,7 +115,7 @@ def finetune():
         print(f"Epoch: {epoch+1} Train Loss: {train_loss}")
 
         # save model
-        torch.save(nbmb_model.state_dict(), f"saved_models/nbmb_model_{epoch}.pth")
+        torch.save(nbmb_model.state_dict(), f"saved_models/nbmb_model_{epoch+1}.pth")
 
         # run dev
         run_dev(nbmb_model, nepBerta_tokenizer, mBart_tokenizer)
