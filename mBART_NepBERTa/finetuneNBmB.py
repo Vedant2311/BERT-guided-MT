@@ -33,7 +33,7 @@ if args.wandb:
                     "lr": args.lr
                })
 
-def load_model():    
+def load_model():
     mBart_model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-50", output_hidden_states=True)
     mBart_tokenizer = MBart50TokenizerFast.from_pretrained("facebook/mbart-large-50", src_lang="ne_NP", tgt_lang="en_XX")
 
@@ -51,7 +51,7 @@ def load_model():
         print("Using DataParallel for NBmB")
 
     # Loading the saved checkpoint for the zeroth epoch since the previous script was killed
-    checkpoint = torch.load("saved_models/nbmb_model_0.pth")
+    checkpoint = torch.load("saved_models/nbmb_model_3.pth")
     nbmb_model.load_state_dict(checkpoint)
 
     nbmb_model.to(device)
@@ -112,10 +112,10 @@ def finetune():
         if args.wandb:
             wandb.log({"train_loss": train_loss})
 
-        print(f"Epoch: {epoch+1} Train Loss: {train_loss}")
+        print(f"Epoch: {epoch+4} Train Loss: {train_loss}")
 
         # save model
-        torch.save(nbmb_model.state_dict(), f"saved_models/nbmb_model_{epoch+1}.pth")
+        torch.save(nbmb_model.state_dict(), f"saved_models/nbmb_model_{epoch+4}.pth")
 
         # run dev
         run_dev(nbmb_model, nepBerta_tokenizer, mBart_tokenizer)

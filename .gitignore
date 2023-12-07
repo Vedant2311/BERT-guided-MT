@@ -5,3 +5,4 @@ dataset/analysis/*
 */wandb
 */saved_models
 *.pyc
+nohup.out
