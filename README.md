@@ -17,3 +17,12 @@ All the train, dev, and test data, along with the relevant scripts, are present 
 TODO
 
 Using Sentence Piece to train a model to create a nepali tokenizer.
+
+## Reproducing Results
+
+MBART baseline:
+Using mbart50.ipynb
+Set Dir path to point to location of **dataset** folder
+Set fine_tune to True or False depending on if model is to be finetuned
+Run all cells to get results
+

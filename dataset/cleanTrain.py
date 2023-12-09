@@ -17,7 +17,7 @@ def filterDirtyPairs(token_list):
     for eng, nep in tqdm(token_list):
         length_freq[len(eng)] += 1
         length_freq[len(nep)] += 1
-        if eng.strip() == nep.strip() or eng.strip() == '' or nep.strip() == '':
+        if eng.strip() == nep.strip():
             dirty_pairs.append((eng, nep))
             continue
 
