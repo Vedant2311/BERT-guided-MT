@@ -94,7 +94,7 @@ if __name__ == "__main__":
     # test the dataset
     from transformers import BertTokenizer, MBartTokenizer
     bert_tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-cased")
-    mbart_tokenizer = MBart50TokenizerFast.from_pretrained("facebook/mbart-large-50", src_lang="ne_NP", tgt_lang="en_XX")
+    mbart_tokenizer = MBart50TokenizerFast.from_pretrained("facebook/mbart-large-50-many-to-many-mmt", src_lang="ne_NP", tgt_lang="en_XX")
     max_length = 128
     src_data_path = "../dataset/train_raw/train.ne_NP"
     trg_data_path = "../dataset/train_raw/train.en_XX"

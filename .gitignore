@@ -4,5 +4,6 @@ dataset/analysis/*
 *.txt
 */wandb
 */saved_models
+*/saved_models_pretrained
 *.pyc
-nohup.out
+nohup*
