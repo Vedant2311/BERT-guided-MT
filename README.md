@@ -14,9 +14,6 @@ We use the FLORES-200 evaluation dataset to get the dev and the test set for Nep
 All the train, dev, and test data, along with the relevant scripts, are present in the **dataset** folder. Note that the language code for English is en_XX and the language code for Nepali is ne_NP.
 
 ## Performing tokenization before fine-tuning the models
-TODO
-
-Using Sentence Piece to train a model to create a nepali tokenizer.
 
 ## Reproducing Results
 
